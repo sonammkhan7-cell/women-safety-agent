@@ -245,7 +245,16 @@ export const LiveJourneyPage: React.FC = () => {
             waypoints={waypoints}
             isDeviated={isDeviated}
             deviationDistance={deviationDistance}
+            isSosActive={journey.is_sos_active}
             height="520px"
+            onLocateMe={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  pos => sendLocationUpdate(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+                  err => console.warn(err)
+                );
+              }
+            }}
           />
 
           {/* Telemetry Status Strip */}

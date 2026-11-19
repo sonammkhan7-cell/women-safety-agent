@@ -109,3 +109,61 @@ def update_status(
     db.refresh(journey)
     return journey
 
+@router.put("/{journey_id}", response_model=JourneyResponse)
+async def update_journey(
+    journey_id: int,
+    data: JourneyCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Edit a scheduled journey."""
+    journey = db.query(Journey).filter(Journey.id == journey_id, Journey.user_id == current_user.id).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found.")
+
+    if journey.status not in [JourneyStatus.PLANNED, JourneyStatus.DEVIATED]:
+        raise HTTPException(status_code=400, detail="Cannot edit a completed or cancelled journey.")
+
+    route_calc = await calculate_route(
+        data.origin_lat, data.origin_lng,
+        data.destination_lat, data.destination_lng,
+        data.travel_mode.value
+    )
+
+    dep_time = data.departure_time
+    if dep_time.tzinfo is None:
+        dep_time = dep_time.replace(tzinfo=timezone.utc)
+    duration = route_calc.get("duration_seconds", 1800)
+    expected_arr = dep_time + timedelta(seconds=duration)
+
+    journey.origin_name = data.origin_name
+    journey.origin_lat = data.origin_lat
+    journey.origin_lng = data.origin_lng
+    journey.destination_name = data.destination_name
+    journey.destination_lat = data.destination_lat
+    journey.destination_lng = data.destination_lng
+    journey.travel_mode = data.travel_mode
+    journey.route_data = json.dumps(route_calc)
+    journey.departure_time = dep_time
+    journey.expected_arrival = expected_arr
+    journey.is_public_for_matching = data.is_public_for_matching
+
+    db.commit()
+    db.refresh(journey)
+    return journey
+
+@router.delete("/{journey_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_journey(
+    journey_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Cancel and delete a scheduled journey."""
+    journey = db.query(Journey).filter(Journey.id == journey_id, Journey.user_id == current_user.id).first()
+    if not journey:
+        raise HTTPException(status_code=404, detail="Journey not found.")
+
+    db.delete(journey)
+    db.commit()
+    return None
+

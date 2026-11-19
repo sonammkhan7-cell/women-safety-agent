@@ -15,7 +15,12 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user_in: UserRegister, db: Session = Depends(get_db)):
-    return register_user(db, user_in)
+    user = register_user(db, user_in)
+    access_token = create_access_token(subject=user.id)
+    user_resp = UserResponse.model_validate(user)
+    user_resp.access_token = access_token
+    user_resp.token_type = "bearer"
+    return user_resp
 
 @router.post("/login", response_model=Token)
 def login(credentials: UserLogin, db: Session = Depends(get_db)):

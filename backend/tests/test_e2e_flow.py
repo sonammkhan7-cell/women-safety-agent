@@ -2,6 +2,7 @@ import json
 import pytest
 from datetime import datetime, timezone, timedelta
 from fastapi.testclient import TestClient
+TestClient.__test__ = False
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool

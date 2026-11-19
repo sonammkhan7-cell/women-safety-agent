@@ -4,7 +4,7 @@ from typing import Optional, List, Dict, Any
 from app.models.alert import AlertType, AlertStatus
 
 class EmergencyAlertCreate(BaseModel):
-    journey_id: int
+    journey_id: Optional[int] = None
     alert_type: AlertType = AlertType.SOS
     latitude: float
     longitude: float

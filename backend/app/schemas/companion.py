@@ -62,3 +62,31 @@ class CompanionGroupResponse(BaseModel):
     status: GroupStatus
     created_at: datetime
     updated_at: datetime
+
+class CompanionMessageCreate(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+
+class CompanionMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    group_id: int
+    sender_id: int
+    sender_name: Optional[str] = None
+    message: str
+    created_at: datetime
+
+class JourneyScheduleBrowseItem(BaseModel):
+    journey_id: int
+    user_id: int
+    user_display_name: str
+    is_verified: bool
+    origin_name: str
+    destination_name: str
+    travel_mode: TravelMode
+    departure_time: datetime
+    status: str
+    origin_lat: float
+    origin_lng: float
+    destination_lat: float
+    destination_lng: float

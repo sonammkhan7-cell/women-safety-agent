@@ -79,6 +79,13 @@ export const DashboardPage: React.FC = () => {
               />
             )}
             <Link
+              to="/journey-buddy"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-3 rounded-xl shadow-md transition active:scale-95 text-xs sm:text-sm"
+            >
+              <Users className="w-4 h-4" />
+              <span>Journey Buddy</span>
+            </Link>
+            <Link
               to="/journeys/create"
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition active:scale-95 text-xs sm:text-sm"
             >

@@ -24,18 +24,57 @@ export const AuthPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (isRegister) {
+      if (trimmedName.length < 2) {
+        setError('Please enter your full name (at least 2 characters).');
+        return;
+      }
+      if (!trimmedEmail || !trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
+        setError('Please enter a valid email address.');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long.');
+        return;
+      }
+      if (password.length > 72) {
+        setError('Password must not exceed 72 characters.');
+        return;
+      }
+    } else {
+      if (!trimmedEmail) {
+        setError('Please enter your email address.');
+        return;
+      }
+      if (!password) {
+        setError('Please enter your password.');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
       if (isRegister) {
-        await register(formData);
+        await register({
+          name: trimmedName,
+          email: trimmedEmail,
+          password: password,
+          phone_number: formData.phone_number.trim() || undefined,
+          emergency_note: formData.emergency_note.trim() || undefined
+        });
         navigate('/verification');
       } else {
-        await login({ email: formData.email, password: formData.password });
+        await login({ email: trimmedEmail, password: password });
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed. Please verify credentials.');
+      setError(err?.message || 'Authentication failed. Please verify your credentials.');
     } finally {
       setSubmitting(false);
     }

@@ -13,6 +13,7 @@ import { LiveJourneyPage } from './pages/LiveJourneyPage';
 import { CompanionDiscoveryPage } from './pages/CompanionDiscoveryPage';
 import { CompanionRequestsPage } from './pages/CompanionRequestsPage';
 import { ActiveCompanionJourneyPage } from './pages/ActiveCompanionJourneyPage';
+import { JourneyBuddyPage } from './pages/JourneyBuddyPage';
 import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 
 // Protected Route Guard
@@ -89,9 +90,15 @@ export const AppContent: React.FC = () => {
             </ProtectedRoute>
           } />
 
+          <Route path="/journey-buddy" element={
+            <ProtectedRoute verifiedOnly>
+              <JourneyBuddyPage />
+            </ProtectedRoute>
+          } />
+
           <Route path="/companions" element={
             <ProtectedRoute verifiedOnly>
-              <DashboardPage />
+              <JourneyBuddyPage />
             </ProtectedRoute>
           } />
 

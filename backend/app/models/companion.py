@@ -52,4 +52,17 @@ class CompanionGroup(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     request = relationship("CompanionRequest", back_populates="group")
+    messages = relationship("CompanionMessage", back_populates="group", cascade="all, delete-orphan", order_by="CompanionMessage.created_at.asc()")
+
+class CompanionMessage(Base):
+    __tablename__ = "companion_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("companion_groups.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    message = Column(String(1000), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    group = relationship("CompanionGroup", back_populates="messages")
+    sender = relationship("User")
 

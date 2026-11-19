@@ -70,61 +70,103 @@ async def calculate_route(
     travel_mode: str = "walking"
 ) -> Dict[str, Any]:
     """
-    Calculates route via Google Maps Routes API or fallback.
+    Calculates route via LocationIQ Directions API, Google Maps Routes API, or high-fidelity fallback.
     """
-    if not settings.GOOGLE_MAPS_API_KEY:
-        return generate_fallback_route(orig_lat, orig_lng, dest_lat, dest_lng, travel_mode)
+    # 1. Try LocationIQ Directions API first if key configured
+    if settings.LOCATIONIQ_API_KEY:
+        liq_mode_map = {
+            "walking": "walking",
+            "bicycling": "cycling",
+            "transit": "driving",
+            "driving": "driving"
+        }
+        profile = liq_mode_map.get(travel_mode.lower(), "driving")
+        liq_url = f"https://us1.locationiq.com/v1/directions/{profile}/{orig_lng},{orig_lat};{dest_lng},{dest_lat}"
+        params = {
+            "key": settings.LOCATIONIQ_API_KEY,
+            "overview": "full",
+            "geometries": "geojson"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.get(liq_url, params=params)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    routes = data.get("routes", [])
+                    if routes:
+                        r = routes[0]
+                        coords = r.get("geometry", {}).get("coordinates", [])
+                        pts = [(round(c[1], 6), round(c[0], 6)) for c in coords]
+                        dist = float(r.get("distance", haversine_distance(orig_lat, orig_lng, dest_lat, dest_lng)))
+                        dur = int(float(r.get("duration", dist / 1.4)))
+                        poly = encode_polyline(pts) if pts else ""
+                        all_lats = [p[0] for p in pts] or [orig_lat, dest_lat]
+                        all_lngs = [p[1] for p in pts] or [orig_lng, dest_lng]
+                        return {
+                            "distance_meters": round(dist, 1),
+                            "duration_seconds": dur,
+                            "polyline": poly,
+                            "waypoints": [{"lat": p[0], "lng": p[1]} for p in pts],
+                            "bounds": {
+                                "min_lat": min(all_lats),
+                                "max_lat": max(all_lats),
+                                "min_lng": min(all_lngs),
+                                "max_lng": max(all_lngs)
+                            },
+                            "source": "locationiq_directions_api"
+                        }
+        except Exception as e:
+            logger.warning(f"LocationIQ Directions API call failed, falling back: {e}")
 
-    url = "https://routes.googleapis.com/directions/v2:computeRoutes"
-    mode_map = {
-        "walking": "WALK",
-        "bicycling": "BICYCLE",
-        "transit": "TRANSIT",
-        "driving": "DRIVE"
-    }
-    google_mode = mode_map.get(travel_mode.lower(), "WALK")
-
-    payload = {
-        "origin": {"location": {"latLng": {"latitude": orig_lat, "longitude": orig_lng}}},
-        "destination": {"location": {"latLng": {"latitude": dest_lat, "longitude": dest_lng}}},
-        "travelMode": google_mode,
-        "polylineQuality": "HIGH_QUALITY",
-        "computeAlternativeRoutes": False
-    }
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": settings.GOOGLE_MAPS_API_KEY,
-        "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.viewport"
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.post(url, json=payload, headers=headers)
-            if resp.status_code == 200:
-                data = resp.json()
-                if "routes" in data and len(data["routes"]) > 0:
-                    r = data["routes"][0]
-                    poly = r.get("polyline", {}).get("encodedPolyline", "")
-                    dist = float(r.get("distanceMeters", 0))
-                    dur_str = r.get("duration", "0s").replace("s", "")
-                    dur = int(float(dur_str)) if dur_str else 0
-                    pts = decode_polyline(poly)
-                    return {
-                        "distance_meters": dist,
-                        "duration_seconds": dur,
-                        "polyline": poly,
-                        "waypoints": [{"lat": p[0], "lng": p[1]} for p in pts],
-                        "bounds": {
-                            "min_lat": min(orig_lat, dest_lat),
-                            "max_lat": max(orig_lat, dest_lat),
-                            "min_lng": min(orig_lng, dest_lng),
-                            "max_lng": max(orig_lng, dest_lng)
-                        },
-                        "source": "google_routes_api"
-                    }
-    except Exception as e:
-        logger.warning(f"Google Routes API call failed, falling back to geodesic: {e}")
+    # 2. Try Google Maps Routes API if key configured
+    if settings.GOOGLE_MAPS_API_KEY:
+        url = "https://routes.googleapis.com/directions/v2:computeRoutes"
+        mode_map = {
+            "walking": "WALK",
+            "bicycling": "BICYCLE",
+            "transit": "TRANSIT",
+            "driving": "DRIVE"
+        }
+        google_mode = mode_map.get(travel_mode.lower(), "WALK")
+        payload = {
+            "origin": {"location": {"latLng": {"latitude": orig_lat, "longitude": orig_lng}}},
+            "destination": {"location": {"latLng": {"latitude": dest_lat, "longitude": dest_lng}}},
+            "travelMode": google_mode,
+            "polylineQuality": "HIGH_QUALITY",
+            "computeAlternativeRoutes": False
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": settings.GOOGLE_MAPS_API_KEY,
+            "X-Goog-FieldMask": "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.viewport"
+        }
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(url, json=payload, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if "routes" in data and len(data["routes"]) > 0:
+                        r = data["routes"][0]
+                        poly = r.get("polyline", {}).get("encodedPolyline", "")
+                        dist = float(r.get("distanceMeters", 0))
+                        dur_str = r.get("duration", "0s").replace("s", "")
+                        dur = int(float(dur_str)) if dur_str else 0
+                        pts = decode_polyline(poly)
+                        return {
+                            "distance_meters": dist,
+                            "duration_seconds": dur,
+                            "polyline": poly,
+                            "waypoints": [{"lat": p[0], "lng": p[1]} for p in pts],
+                            "bounds": {
+                                "min_lat": min(orig_lat, dest_lat),
+                                "max_lat": max(orig_lat, dest_lat),
+                                "min_lng": min(orig_lng, dest_lng),
+                                "max_lng": max(orig_lng, dest_lng)
+                            },
+                            "source": "google_routes_api"
+                        }
+        except Exception as e:
+            logger.warning(f"Google Routes API call failed, falling back to geodesic: {e}")
 
     return generate_fallback_route(orig_lat, orig_lng, dest_lat, dest_lng, travel_mode)
 

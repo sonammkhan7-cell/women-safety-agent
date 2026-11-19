@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { MapView } from '../components/MapView';
 import { 
-  User, Shield, Phone, Mail, Trash2, Plus, AlertTriangle, CheckCircle2, FileText, Check, Lock 
+  User, Shield, Phone, Mail, Trash2, Plus, AlertTriangle, CheckCircle2, 
+  FileText, Check, Lock, MapPin, Eye, AlertOctagon 
 } from 'lucide-react';
 
 export const ProfileSettingsPage: React.FC = () => {
@@ -28,6 +30,7 @@ export const ProfileSettingsPage: React.FC = () => {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [resolvingId, setResolvingId] = useState<number | null>(null);
   const [resolveNote, setResolveNote] = useState('');
+  const [viewingAlertMapId, setViewingAlertMapId] = useState<number | null>(null);
 
   const loadData = async () => {
     try {
@@ -373,7 +376,33 @@ export const ProfileSettingsPage: React.FC = () => {
                     </div>
 
                     <div className="text-slate-600 text-[11px]">{a.address_text}</div>
-                    <div className="text-[10px] text-slate-400">Triggered: {new Date(a.created_at).toLocaleString()}</div>
+                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                      <span>Triggered: {new Date(a.created_at).toLocaleString()}</span>
+                      <button
+                        type="button"
+                        onClick={() => setViewingAlertMapId(viewingAlertMapId === a.id ? null : a.id)}
+                        className="text-rose-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span>{viewingAlertMapId === a.id ? 'Hide Location Map' : 'View Emergency Map'}</span>
+                      </button>
+                    </div>
+
+                    {/* Interactive Emergency Map Preview */}
+                    {viewingAlertMapId === a.id && (
+                      <div className="pt-2">
+                        <div className="text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1">
+                          <AlertOctagon className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Emergency Coordinates: ({a.last_known_lat.toFixed(5)}, {a.last_known_lng.toFixed(5)})</span>
+                        </div>
+                        <MapView
+                          origin={{ name: "Distress Signal Location", lat: a.last_known_lat, lng: a.last_known_lng }}
+                          currentLocation={{ lat: a.last_known_lat, lng: a.last_known_lng, accuracy: 10 }}
+                          isSosActive={a.status === 'active'}
+                          height="280px"
+                        />
+                      </div>
+                    )}
 
                     {a.status === 'active' && (
                       <div className="pt-2 border-t border-slate-200 flex items-center gap-2">

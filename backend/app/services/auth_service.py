@@ -1,51 +1,76 @@
+import logging
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.models.user import User, VerificationStatus, UserRole
 from app.schemas.auth import UserRegister, UserLogin
 from app.utils.security import hash_password, verify_password, create_access_token, decode_access_token
 
+logger = logging.getLogger(__name__)
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token")
 
 def register_user(db: Session, user_in: UserRegister) -> User:
-    existing = db.query(User).filter(User.email == user_in.email.lower()).first()
+    email_clean = user_in.email.lower().strip()
+    existing = db.query(User).filter(User.email == email_clean).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="An account with this email already exists."
+            detail="An account with this email already exists. Please sign in instead."
         )
     
     # Check if first user in system, make admin for easy review in MVP
-    is_first = db.query(User).count() == 0
+    try:
+        is_first = db.query(User).count() == 0
+    except Exception:
+        is_first = False
+
     role = UserRole.ADMIN if is_first else UserRole.USER
 
     user = User(
         name=user_in.name.strip(),
-        email=user_in.email.lower().strip(),
+        email=email_clean,
         password_hash=hash_password(user_in.password),
         phone_number=user_in.phone_number,
         emergency_note=user_in.emergency_note,
-        is_email_verified=True,  # Initially marked true or via verification link
+        is_email_verified=True,
         verification_status=VerificationStatus.PENDING,
         role=role
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except IntegrityError as ie:
+        db.rollback()
+        logger.warning(f"Integrity error during registration for {email_clean}: {ie}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists. Please sign in instead."
+        )
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Unexpected database error during registration for {email_clean}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to register account due to a database error. Please try again."
+        )
 
 def authenticate_user(db: Session, credentials: UserLogin) -> User:
-    user = db.query(User).filter(User.email == credentials.email.lower().strip()).first()
+    email_clean = credentials.email.lower().strip()
+    user = db.query(User).filter(User.email == email_clean).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password."
+            detail="Incorrect email or password. Please verify your credentials."
         )
     if not verify_password(credentials.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password."
+            detail="Incorrect email or password. Please verify your credentials."
         )
     return user
 

@@ -19,9 +19,9 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { label: 'Dashboard', path: '/dashboard', icon: Compass },
     { label: 'Create Journey', path: '/journeys/create', icon: Shield },
-    { label: 'Find Companions', path: '/companions', icon: Users, verifiedOnly: true },
+    { label: 'Journey Buddy', path: '/journey-buddy', icon: Users, verifiedOnly: true },
     { label: 'Requests', path: '/requests', icon: Bell },
-    { label: 'Profile & Contacts', path: '/profile', icon: User },
+    { label: 'Profile & Guardians', path: '/profile', icon: User },
   ];
 
   return (
