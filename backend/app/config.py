@@ -35,7 +35,14 @@ class Settings(BaseSettings):
         if self.DATABASE_URL.startswith("sqlite:///./"):
             rel_file = self.DATABASE_URL.replace("sqlite:///./", "")
             return f"sqlite:///{(PROJECT_ROOT / rel_file).as_posix()}"
+        if self.DATABASE_URL.startswith("postgres://"):
+            return self.DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+        if self.DATABASE_URL.startswith("postgresql://"):
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
         return self.DATABASE_URL
+
+    # Browser origin allowed to call the API.
+    FRONTEND_URL: str = "http://localhost:5173"
     
     # Security
     SECRET_KEY: str = "dev_secret_key_super_secure_safety_agent_women_travel_2026_xyz"

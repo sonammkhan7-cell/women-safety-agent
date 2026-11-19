@@ -250,3 +250,30 @@ All 11 tests pass:
 - `test_route_overlap_calculation`
 - `test_companion_matching_rule_based`
 
+---
+
+## 8. Deploying on Render with Neon PostgreSQL
+
+The root `render.yaml` defines a Render API service and static frontend. It expects
+the PostgreSQL connection string to be entered as the API service's `DATABASE_URL`;
+use a Neon PostgreSQL connection string (including `sslmode=require`), not Neon
+object-storage credentials or an AI Gateway token. The app converts standard
+`postgres://` and `postgresql://` URLs to the psycopg SQLAlchemy driver.
+
+1. Push this repository to GitHub and create a Render Blueprint from it.
+2. In Render, set the API service's `DATABASE_URL` to the Neon database connection
+   string. The Blueprint generates `SECRET_KEY` and sets the frontend CORS origin.
+3. Optionally add API keys in the corresponding Render environment variables:
+   `GOOGLE_MAPS_API_KEY` or `LOCATIONIQ_API_KEY` for backend route lookups, and
+   `VITE_LOCATIONIQ_API_KEY` for browser-side location autocomplete. Browser-side
+   keys are public; restrict them with the provider.
+4. Deploy. The API startup command applies Alembic migrations before starting
+   Uvicorn; the frontend is built and published as a static site.
+5. Verify the API at `/health` and the frontend at its Render URL.
+
+Do not run `backend/seed.py` against a public deployment: it inserts public demo
+accounts with known passwords. Also note that emergency-contact notifications
+are currently simulated and logged, not delivered by SMS or email. This MVP is
+not ready to be relied on as an emergency response service until real notification
+delivery and operational monitoring have been implemented and tested.
+
