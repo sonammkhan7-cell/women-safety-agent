@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.database import Base, get_db
+from app.services.auth_service import promote_user_to_admin
 
 # Isolated In-Memory DB
 TEST_DB_URL = "sqlite:///:memory:"
@@ -33,13 +34,15 @@ def setup_db():
 client = TestClient(app)
 
 def test_full_journey_safety_and_companion_matching_lifecycle():
-    # 1. Register Admin User
+    # 1. Register a reviewer account and promote it through the owner-only helper.
     admin_reg = client.post("/api/v1/auth/register", json={
         "name": "System Admin",
         "email": "admin@test.org",
         "password": "Password123!"
     })
     assert admin_reg.status_code == 201
+    with TestingSessionLocal() as db:
+        promote_user_to_admin(db, "admin@test.org")
     admin_token = client.post("/api/v1/auth/login", json={
         "email": "admin@test.org", "password": "Password123!"
     }).json()["access_token"]
@@ -80,7 +83,7 @@ def test_full_journey_safety_and_companion_matching_lifecycle():
     admin_headers = {"Authorization": f"Bearer {admin_token}"}
     review_resp = client.post(f"/api/v1/verification/admin/review/{verif_id}", headers=admin_headers, json={
         "status": "verified",
-        "reviewer_notes": "Identity confirmed via campus directory"
+        "reviewer_notes": "Institutional affiliation checked via campus directory"
     })
     assert review_resp.status_code == 200
     assert review_resp.json()["status"] == "verified"

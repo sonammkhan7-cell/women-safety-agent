@@ -59,9 +59,9 @@ export const AdminVerificationPage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Admin Eligibility Review Portal</h1>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Manual Affiliation Review</h1>
         <p className="text-xs text-slate-500 mt-1">
-          Review candidate verification submissions and grant or revoke verified woman eligibility status.
+          Check each stated affiliation or referral through an official institution or community channel before approval. Approval does not certify gender, character, or guarantee safety.
         </p>
       </div>
 
@@ -100,13 +100,13 @@ export const AdminVerificationPage: React.FC = () => {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">User ID: #{item.user_id}</span>
+                      <span className="font-bold text-slate-900 text-sm">{item.user_name}</span>
                       <span className="font-mono text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
                         {item.verification_reference}
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-400 capitalize">
-                      {item.document_type?.replace('_', ' ')} • Submitted on {new Date(item.created_at).toLocaleDateString()}
+                      {item.user_email} • {item.document_type?.replace('_', ' ')} • Submitted on {new Date(item.created_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -146,7 +146,7 @@ export const AdminVerificationPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                 <input
                   type="text"
-                  placeholder="Review note (e.g. Identity confirmed against campus registry)..."
+                  placeholder="Record the official affiliation source checked and outcome..."
                   value={reviewNotes}
                   onChange={e => setReviewNotes(e.target.value)}
                   className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-rose-500 w-full"

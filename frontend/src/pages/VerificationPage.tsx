@@ -61,7 +61,7 @@ export const VerificationPage: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Eligibility Verification</h1>
         <p className="text-sm text-slate-500 mt-1">
-          Safira safeguards woman-only travel companion matching through privacy-preserving verification.
+          A human reviewer checks your stated institution or community affiliation before companion matching is enabled. This review does not certify gender, character, or personal safety.
         </p>
       </div>
 
@@ -145,7 +145,7 @@ export const VerificationPage: React.FC = () => {
             </h3>
           </div>
           <p className="text-xs text-slate-500 mb-6">
-            To protect member privacy, do not upload sensitive unmasked document photos. Provide a masked credential identifier or institutional reference for review.
+            Provide an affiliation or referral reference that a reviewer can check through an official institution or community channel. Do not submit full ID numbers or document photos.
           </p>
 
           {successMsg && (
@@ -200,7 +200,7 @@ export const VerificationPage: React.FC = () => {
               </label>
               <textarea
                 rows={3}
-                placeholder="Provide enrollment details, organization department, or referral member details..."
+                placeholder="Organization or community name, your affiliation, and a reference the reviewer can check..."
                 value={submissionNotes}
                 onChange={e => setSubmissionNotes(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-rose-500"
@@ -223,7 +223,7 @@ export const VerificationPage: React.FC = () => {
             <Lock className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
             <div>
               <strong className="block font-semibold">Privacy Safeguards:</strong>
-              Safira uses manual verification to prevent gender impersonation without publishing sensitive documents. Verification status is checked before routing candidate matching results.
+              Reviewers should verify affiliation through official channels and record what they checked. Approval confirms eligibility under the review policy; it does not prove gender, character, or guarantee safety.
             </div>
           </div>
         </div>

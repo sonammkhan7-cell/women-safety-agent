@@ -21,8 +21,13 @@ class VerificationResponse(BaseModel):
     user_id: int
     status: VerificationStatus
     document_type: DocumentType
+    verification_reference: Optional[str] = None
     masked_identifier: Optional[str] = None
     submission_notes: Optional[str] = None
     reviewer_notes: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     created_at: datetime
+
+class AdminVerificationResponse(VerificationResponse):
+    user_name: str
+    user_email: str

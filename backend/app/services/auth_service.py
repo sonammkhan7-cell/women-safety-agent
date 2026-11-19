@@ -21,23 +21,15 @@ def register_user(db: Session, user_in: UserRegister) -> User:
             detail="An account with this email already exists. Please sign in instead."
         )
     
-    # Check if first user in system, make admin for easy review in MVP
-    try:
-        is_first = db.query(User).count() == 0
-    except Exception:
-        is_first = False
-
-    role = UserRole.ADMIN if is_first else UserRole.USER
-
     user = User(
         name=user_in.name.strip(),
         email=email_clean,
         password_hash=hash_password(user_in.password),
         phone_number=user_in.phone_number,
         emergency_note=user_in.emergency_note,
-        is_email_verified=True,
+        is_email_verified=False,
         verification_status=VerificationStatus.PENDING,
-        role=role
+        role=UserRole.USER
     )
     try:
         db.add(user)
@@ -58,6 +50,26 @@ def register_user(db: Session, user_in: UserRegister) -> User:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to register account due to a database error. Please try again."
         )
+
+def promote_user_to_admin(db: Session, email: str) -> User:
+    email_clean = email.strip().lower()
+    if not email_clean:
+        raise ValueError("An account email is required.")
+
+    user = db.query(User).filter(User.email == email_clean).first()
+    if not user:
+        raise ValueError("No registered account exists for that email.")
+
+    if user.role != UserRole.ADMIN:
+        user.role = UserRole.ADMIN
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        db.refresh(user)
+
+    return user
 
 def authenticate_user(db: Session, credentials: UserLogin) -> User:
     email_clean = credentials.email.lower().strip()

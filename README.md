@@ -252,7 +252,30 @@ All 11 tests pass:
 
 ---
 
-## 8. Deploying on Render with Neon PostgreSQL
+## 8. Manual Affiliation Review
+
+New registrations are ordinary users with pending eligibility status; public
+sign-up never grants administrator access. Email ownership is not currently
+verified by an email link, so `is_email_verified` remains false.
+
+Applicants may provide an institution or community affiliation, a masked
+reference, and context. A trusted reviewer should check that reference through
+an official institution or community channel and record the source and outcome
+in the review notes. The application does not independently verify identity or
+gender, assess whether someone is “good,” or guarantee personal safety. Do not
+collect or store unmasked identity documents in this MVP.
+
+To appoint a reviewer:
+
+1. Have the trusted reviewer register their own account.
+2. From the backend directory, run `python promote_admin.py reviewer@example.org`
+   using the configured database. Type `yes` to confirm the promotion.
+3. Ask the reviewer to sign out and back in, then open `/admin/verification`.
+   Only administrators can read or decide pending applications.
+
+---
+
+## 9. Deploying on Render with Neon PostgreSQL
 
 The root `render.yaml` defines a Render API service and static frontend. It expects
 the PostgreSQL connection string to be entered as the API service's `DATABASE_URL`;

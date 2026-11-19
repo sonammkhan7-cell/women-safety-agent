@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User, UserRole
 from app.schemas.verification import (
-    VerificationSubmit, VerificationReview, VerificationResponse
+    VerificationSubmit, VerificationReview, VerificationResponse,
+    AdminVerificationResponse
 )
 from app.services.auth_service import get_current_user, get_current_admin
 from app.services.verification_service import (
@@ -34,12 +35,19 @@ def get_status(
         )
     return verif
 
-@router.get("/admin/all", response_model=List[VerificationResponse])
+@router.get("/admin/all", response_model=List[AdminVerificationResponse])
 def get_all_for_admin(
     admin: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
-    return list_pending_verifications(db)
+    return [
+        {
+            **VerificationResponse.model_validate(verification).model_dump(),
+            "user_name": verification.user.name,
+            "user_email": verification.user.email,
+        }
+        for verification in list_pending_verifications(db)
+    ]
 
 @router.post("/admin/review/{verification_id}", response_model=VerificationResponse)
 def review(

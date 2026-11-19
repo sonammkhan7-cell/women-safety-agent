@@ -44,7 +44,9 @@ def get_user_verification(db: Session, user_id: int) -> Optional[Verification]:
     return db.query(Verification).filter(Verification.user_id == user_id).order_by(Verification.created_at.desc()).first()
 
 def list_pending_verifications(db: Session) -> List[Verification]:
-    return db.query(Verification).order_by(Verification.created_at.desc()).all()
+    return db.query(Verification).filter(
+        Verification.status == VerificationStatus.PENDING
+    ).order_by(Verification.created_at.asc()).all()
 
 def review_verification(db: Session, verification_id: int, review_data: VerificationReview, reviewer: User) -> Verification:
     verification = db.query(Verification).filter(Verification.id == verification_id).first()
