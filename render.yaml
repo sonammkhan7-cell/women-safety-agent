@@ -14,7 +14,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: FRONTEND_URL
-        value: https://women-safety-agent-web.onrender.com
+        value: https://sonammkhan7-cell-women-safety-agent.onrender.com
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: LOCATIONIQ_API_KEY
@@ -28,7 +28,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://women-safety-agent-api.onrender.com/api/v1
+        value: https://women-safety-agent.onrender.com/api/v1
       - key: VITE_LOCATIONIQ_API_KEY
         sync: false
     routes:
